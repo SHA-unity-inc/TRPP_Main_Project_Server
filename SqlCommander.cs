@@ -30,7 +30,7 @@ namespace shooter_server
             this.port = port;
         }
 
-        public async Task ExecuteSqlCommand(Lobby lobby, WebSocket webSocket, string sqlCommand, Player player, WorldMap worldMap)
+        public async Task ExecuteSqlCommand(Lobby lobby, WebSocket webSocket, string sqlCommand, Player player)
         {
             Console.WriteLine(sqlCommand);
             // Создание соединения с базой данных

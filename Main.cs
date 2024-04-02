@@ -68,21 +68,10 @@ namespace shooter_server
                         //await webSocket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, true, CancellationToken.None);
 
                         // Проверьте, является ли сообщение командой
-                        if (mainLobby.Players[webSocket].isPlay.isPlayed)
+                        if (message.StartsWith("/sql"))
                         {
-                            if (message.StartsWith("/sql"))
-                            {
-                                message = message.Substring("/sql".Length).Trim();
-                                await mainLobby.gameLobbys[mainLobby.Players[webSocket].isPlay.lobbyId].SqlCommander.ExecuteSqlCommand(mainLobby.gameLobbys[mainLobby.Players[webSocket].isPlay.lobbyId], webSocket, message, mainLobby.Players[webSocket], mainLobby.worldMap);
-                            }
-                        }
-                        else
-                        {
-                            if (message.StartsWith("/sql"))
-                            {
-                                message = message.Substring("/sql".Length).Trim();
-                                await mainLobby.SqlCommander.ExecuteSqlCommand(mainLobby, webSocket, message, mainLobby.Players[webSocket], mainLobby.worldMap);
-                            }
+                            message = message.Substring("/sql".Length).Trim();
+                            await mainLobby.SqlCommander.ExecuteSqlCommand(mainLobby, webSocket, message, mainLobby.Players[webSocket]);
                         }
                     }
                 } while (!result.CloseStatus.HasValue || result.CloseStatus != WebSocketCloseStatus.NormalClosure);

@@ -10,11 +10,8 @@ namespace shooter_server
 {
     public class Lobby
     {
-        public List<GameLobby> gameLobbys = new List<GameLobby>();
-        public WorldMap worldMap = new WorldMap();
         private Dictionary<WebSocket, Player> players = new Dictionary<WebSocket, Player>();
 
-        public CommandManager CommandManager = new CommandManager();
         public SqlCommander SqlCommander = new SqlCommander(
                 "localhost",
                 "postgres",
