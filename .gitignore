@@ -1,0 +1,9 @@
+*.vsidx
+*.txt
+*.cache
+*.assets.cache
+*.props
+*.json
+*.bin
+*.suo
+*.futdcache.v2
