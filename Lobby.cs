@@ -17,7 +17,7 @@ namespace shooter_server
                 "postgres",
                 "postgres",
                 "ShooterDB",
-                2265
+                5432
             );
 
         public Dictionary<WebSocket, Player> Players { get => players; }
