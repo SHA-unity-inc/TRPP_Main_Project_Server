@@ -82,7 +82,7 @@ namespace shooter_server
                 string username = credentials[0], password = credentials[1];
 
                 // Проверка, что пользователь с таким именем существует
-                cursor.CommandText = $"SELECT * FROM users WHERE username='{username}'";
+                cursor.CommandText = $"SELECT * FROM users WHERE name='{username}'";
                 using (NpgsqlDataReader reader = cursor.ExecuteReader())
                 {
                     if (reader.Read())
