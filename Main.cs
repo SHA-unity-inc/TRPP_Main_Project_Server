@@ -44,10 +44,8 @@ namespace shooter_server
 
                 Console.WriteLine($"WebSocket connection established from: {context.Request.RemoteEndPoint}");
 
-                // Добавьте нового клиента в словарь с уникальным идентификатором (может быть IP-адрес)
                 mainLobby.AddPlayer(webSocket, new Player());
 
-                // Уведомите всех клиентов о новом подключении
                 await NotifyClients($"{context.Request.RemoteEndPoint} has joined.");
 
                 byte[] buffer = new byte[1024];
@@ -62,12 +60,6 @@ namespace shooter_server
                         string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                         Console.WriteLine($"Received: {message}");
 
-                        // Обработайте полученное сообщение здесь...
-
-                        // Опционально отправьте ответ клиенту
-                        //await webSocket.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), WebSocketMessageType.Text, true, CancellationToken.None);
-
-                        // Проверьте, является ли сообщение командой
                         if (message.StartsWith("/sql"))
                         {
                             message = message.Substring("/sql".Length).Trim();
@@ -76,13 +68,10 @@ namespace shooter_server
                     }
                 } while (!result.CloseStatus.HasValue || result.CloseStatus != WebSocketCloseStatus.NormalClosure);
                 
-                // После завершения цикла, закрываем соединение
                 await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
 
-                // Обновите статус закрытия клиента в словаре
                 mainLobby.RemovePlayer(webSocket);
 
-                // Уведомите всех клиентов о завершении соединения
                 await NotifyClients($"{context.Request.RemoteEndPoint} has left. Reason: {result.CloseStatusDescription}");
 
                 Console.WriteLine($"WebSocket connection closed from: {context.Request.RemoteEndPoint}. Close status: {result.CloseStatus}, Reason: {result.CloseStatusDescription}");
@@ -95,7 +84,6 @@ namespace shooter_server
 
         private static async Task NotifyClients(string message)
         {
-            // Итерируйтесь по всем подключенным клиентам и отправляйте уведомление
             foreach (var client in mainLobby.Players.Keys)
             {
                 if (client.State != WebSocketState.Open)
