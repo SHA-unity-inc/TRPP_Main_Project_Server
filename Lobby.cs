@@ -16,7 +16,7 @@ namespace shooter_server
                 "localhost",
                 "postgres",
                 "postgres",
-                "ShooterDB",
+                "TRPP_Database",
                 5432
             );
 
