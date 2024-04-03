@@ -96,11 +96,13 @@ namespace shooter_server
                             lobby.Players[ws].Id = userId;
                             // Вызываем add_player и передаем id
                             lobby.SendMessageExcept($"Welcome, Player {lobby.Players[ws].Id}", ws);
+                            lobby.SendMessagePlayer($"/ans Connection true", ws);
                             SendLoginResponse(senderId, userId, "success");
                         }
                         else
                         {
                             SendLoginResponse(senderId, -1, "error", "Invalid password");
+                            lobby.SendMessagePlayer($"/ans Connection false", ws);
                         }
                     }
                     else
