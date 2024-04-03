@@ -88,21 +88,36 @@ namespace shooter_server
                     if (reader.Read())
                     {
                         string storedPassword = reader.GetString(2);
+                        string storedSalt = reader.GetString(3);
+                        
+                        string saltedPassword = password + storedSalt;
 
-                        if (password == storedPassword)
+                        using (SHA256 sha256 = SHA256.Create())
                         {
-                            int userId = reader.GetInt32(0);
-                            // Сохраняем id в экземпляре SqlCommander
-                            lobby.Players[ws].Id = userId;
-                            // Вызываем add_player и передаем id
-                            lobby.SendMessageExcept($"Welcome, Player {lobby.Players[ws].Id}", ws);
-                            lobby.SendMessagePlayer($"/ans true", ws);
-                            SendLoginResponse(senderId, userId, "success");
-                        }
-                        else
-                        {
-                            SendLoginResponse(senderId, -1, "error", "Invalid password");
-                            lobby.SendMessagePlayer($"/ans false", ws);
+                            // Кодируем соленый пароль в байтовую строку перед передачей его объекту хэша
+                            byte[] saltedPasswordBytes = Encoding.UTF8.GetBytes(saltedPassword);
+
+                            // Обновляем объект хэша с байтами соленого пароля
+                            byte[] hashedPasswordBytes = sha256.ComputeHash(saltedPasswordBytes);
+
+                            // Получаем шестнадцатеричное представление хэша
+                            string hashedPassword = BitConverter.ToString(hashedPasswordBytes).Replace("-", "");
+
+                            if (hashedPassword == storedPassword)
+                            {
+                                int userId = reader.GetInt32(0);
+                                // Сохраняем id в экземпляре SqlCommander
+                                lobby.Players[ws].Id = userId;
+                                // Вызываем add_player и передаем id
+                                lobby.SendMessageExcept($"Welcome, Player {lobby.Players[ws].Id}", ws);
+                                lobby.SendMessagePlayer($"/ans true", ws);
+                                SendLoginResponse(senderId, userId, "success");
+                            }
+                            else
+                            {
+                                SendLoginResponse(senderId, -1, "error", "Invalid password");
+                                lobby.SendMessagePlayer($"/ans false", ws);
+                            }
                         }
                     }
                     else
