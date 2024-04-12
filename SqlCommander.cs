@@ -101,15 +101,15 @@ namespace shooter_server
                         data.Add(" . ");
 
                         //data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
-                        data.Add(reader["products"] == DBNull.Value ? "-" : reader["products"].ToString());
+                        data.Add(reader["products"] == DBNull.Value ? "-" : String.Join(",", reader["products"].ToString()));
 
                         data.Add(" . ");
 
-                        data.Add(reader["users"] == DBNull.Value ? "-" : reader["users"].ToString());
+                        data.Add(reader["users"] == DBNull.Value ? "-" : String.Join(",", reader["users"].ToString()));
 
                         data.Add(" . ");
 
-                        data.Add(reader["tags"] == DBNull.Value ? "-" : reader["tags"].ToString());
+                        data.Add(reader["tags"] == DBNull.Value ? "-" : String.Join(",", reader["tags"].ToString()));
                     }
 
                     string message = string.Join("", data);
