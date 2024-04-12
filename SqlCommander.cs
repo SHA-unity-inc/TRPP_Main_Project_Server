@@ -89,17 +89,30 @@ namespace shooter_server
                     while (reader.Read())
                     {
                         data.Add("_text_");
+
                         data.Add(reader["id"] == DBNull.Value ? "-" : reader["id"].ToString());
+
+                        data.Add(" . ");
+
                         data.Add("<l>");
                         data.Add(reader["title"] == DBNull.Value ? "-" : reader["title"].ToString());
                         data.Add("</l>");
+
+                        data.Add(" . ");
+
                         //data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
                         data.Add(reader["products"] == DBNull.Value ? "-" : reader["products"].ToString());
+
+                        data.Add(" . ");
+
                         data.Add(reader["users"] == DBNull.Value ? "-" : reader["users"].ToString());
+
+                        data.Add(" . ");
+
                         data.Add(reader["tags"] == DBNull.Value ? "-" : reader["tags"].ToString());
                     }
 
-                    string message = string.Join(", ", data);
+                    string message = string.Join("", data);
                     Console.WriteLine(message);
                     lobby.SendMessagePlayer($"/ans true {message}", ws);
                 }
