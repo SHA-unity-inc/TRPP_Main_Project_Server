@@ -8,4 +8,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = shooter_server
-build_property.ProjectDir = C:\Users\Artem\AndroidStudioProjects\TRPP_Main_Project_Server\
+build_property.ProjectDir = C:\Users\zzz20\Documents\GitHub\TRPP_Main_Project_Server\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
