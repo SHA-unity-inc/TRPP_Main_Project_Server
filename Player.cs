@@ -27,8 +27,9 @@ namespace shooter_server
         {
             try
             {
-                await webSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(message), 0, message.Length),
-                                       WebSocketMessageType.Text, true, CancellationToken.None);
+                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+                ArraySegment<byte> segment = new ArraySegment<byte>(messageBytes, 0, messageBytes.Length);
+                await webSocket.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
             }
             catch (Exception ex)
             {

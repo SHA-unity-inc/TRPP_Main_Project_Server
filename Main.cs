@@ -13,6 +13,7 @@ namespace shooter_server
 {
     class WebSocketServerExample
     {
+        private static int kilobite = 1024;
         private static Lobby mainLobby = new Lobby();
 
         static async Task Main()
@@ -48,7 +49,7 @@ namespace shooter_server
 
                 await NotifyClients($"{context.Request.RemoteEndPoint} has joined.");
 
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[kilobite];
                 WebSocketReceiveResult result;
 
                 do
