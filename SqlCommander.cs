@@ -82,14 +82,17 @@ namespace shooter_server
                 string[] credentials = sqlCommand.Split(" ");
                 int from = int.Parse(credentials[0]), to = int.Parse(credentials[1]);
 
-                cursor.CommandText = $"SELECT \r\n  recepts.title, \r\n  recepts.html_content, \r\n  array_agg(DISTINCT products.name) AS products,\r\n  array_agg(DISTINCT users.username) AS users,\r\n  array_agg(DISTINCT tags.tag) AS tags\r\nFROM \r\n  recepts \r\nLEFT JOIN \r\n  recept_products ON recepts.id = recept_products.recept_id \r\nLEFT JOIN \r\n  products ON recept_products.product_id = products.id\r\nLEFT JOIN \r\n  recept_users ON recepts.id = recept_users.recept_id \r\nLEFT JOIN \r\n  users ON recept_users.user_id = users.id\r\nLEFT JOIN \r\n  recept_tags ON recepts.id = recept_tags.recept_id \r\nLEFT JOIN \r\n  tags ON recept_tags.tag_id = tags.id\r\nGROUP BY \r\n  recepts.id;";
+                cursor.CommandText = $"SELECT \r\n  recepts.id, \r\n  recepts.title, \r\n  recepts.html_content, \r\n  array_agg(DISTINCT products.name) AS products,\r\n  array_agg(DISTINCT users.username) AS users,\r\n  array_agg(DISTINCT tags.tag) AS tags\r\nFROM \r\n  recepts \r\nLEFT JOIN \r\n  recept_products ON recepts.id = recept_products.recept_id \r\nLEFT JOIN \r\n  products ON recept_products.product_id = products.id\r\nLEFT JOIN \r\n  recept_users ON recepts.id = recept_users.recept_id \r\nLEFT JOIN \r\n  users ON recept_users.user_id = users.id\r\nLEFT JOIN \r\n  recept_tags ON recepts.id = recept_tags.recept_id \r\nLEFT JOIN \r\n  tags ON recept_tags.tag_id = tags.id\r\nGROUP BY \r\n  recepts.id;";
                 using (NpgsqlDataReader reader = cursor.ExecuteReader())
                 {
                     List<string> data = new List<string>();
                     while (reader.Read())
                     {
+                        data.Add(reader["id"] == DBNull.Value ? "-" : reader["title"].ToString());
+                        data.Add("<l>");
                         data.Add(reader["title"] == DBNull.Value ? "-" : reader["title"].ToString());
-                        data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
+                        data.Add("</l>");
+                        //data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
                         data.Add(reader["products"] == DBNull.Value ? "-" : reader["products"].ToString());
                         data.Add(reader["users"] == DBNull.Value ? "-" : reader["users"].ToString());
                         data.Add(reader["tags"] == DBNull.Value ? "-" : reader["tags"].ToString());
