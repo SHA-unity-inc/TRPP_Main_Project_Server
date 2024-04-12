@@ -88,7 +88,8 @@ namespace shooter_server
                     List<string> data = new List<string>();
                     while (reader.Read())
                     {
-                        data.Add(reader["id"] == DBNull.Value ? "-" : reader["title"].ToString());
+                        data.Add("_text_");
+                        data.Add(reader["id"] == DBNull.Value ? "-" : reader["id"].ToString());
                         data.Add("<l>");
                         data.Add(reader["title"] == DBNull.Value ? "-" : reader["title"].ToString());
                         data.Add("</l>");
