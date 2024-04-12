@@ -96,6 +96,7 @@ namespace shooter_server
                     }
 
                     string message = string.Join(", ", data);
+                    Console.WriteLine(message);
                     lobby.SendMessagePlayer($"/ans true {message}", ws);
                 }
 
