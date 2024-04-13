@@ -81,7 +81,7 @@ namespace shooter_server
         {
             try
             {
-                sqlCommand = sqlCommand.Substring(11);
+                sqlCommand = sqlCommand.Substring(10);
                 string[] credentials = sqlCommand.Split(" ");
                 int id = int.Parse(credentials[0]);
 
