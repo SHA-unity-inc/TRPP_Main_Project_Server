@@ -61,6 +61,9 @@ namespace shooter_server
                             case string s when s.StartsWith("GetRecepts"):
                                 GetRecepts(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
                                 break;
+                            case string s when s.StartsWith("GetRecept"):
+                                GetRecept(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                break;
                             default:
                                 Console.WriteLine("Command not found");
                                 break;
@@ -74,6 +77,36 @@ namespace shooter_server
             }
         }
 
+        private void GetRecept(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            try
+            {
+                sqlCommand = sqlCommand.Substring(11);
+                string[] credentials = sqlCommand.Split(" ");
+                int id = int.Parse(credentials[0]);
+
+                cursor.CommandText = $"SELECT \r\n  recepts.html_content FROM \r\n recepts WHERE recepts.id = {id};";
+                using (NpgsqlDataReader reader = cursor.ExecuteReader())
+                {
+                    List<string> data = new List<string>();
+                    while (reader.Read())
+                    {
+                        data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
+                    }
+
+                    string message = string.Join("", data);
+                    Console.WriteLine(message);
+                    lobby.SendMessagePlayer($"/ans true {message}", ws);
+                }
+
+            }
+            catch (Exception e)
+            {
+                SendLoginResponse(senderId, -1, "error", "Recepts Not Found");
+                Console.WriteLine($"Error executing Login command: {e}");
+            }
+        }
+
         private void GetRecepts(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             try
@@ -82,7 +115,7 @@ namespace shooter_server
                 string[] credentials = sqlCommand.Split(" ");
                 int from = int.Parse(credentials[0]), to = int.Parse(credentials[1]);
 
-                cursor.CommandText = $"SELECT \r\n  recepts.id, \r\n  recepts.title, \r\n  recepts.html_content, \r\n  array_agg(DISTINCT products.name) AS products,\r\n  array_agg(DISTINCT users.username) AS users,\r\n  array_agg(DISTINCT tags.tag) AS tags\r\nFROM \r\n  recepts \r\nLEFT JOIN \r\n  recept_products ON recepts.id = recept_products.recept_id \r\nLEFT JOIN \r\n  products ON recept_products.product_id = products.id\r\nLEFT JOIN \r\n  recept_users ON recepts.id = recept_users.recept_id \r\nLEFT JOIN \r\n  users ON recept_users.user_id = users.id\r\nLEFT JOIN \r\n  recept_tags ON recepts.id = recept_tags.recept_id \r\nLEFT JOIN \r\n  tags ON recept_tags.tag_id = tags.id\r\nGROUP BY \r\n  recepts.id;";
+                cursor.CommandText = $"SELECT \r\n  recepts.id, \r\n  recepts.title, \r\n  array_agg(DISTINCT products.name) AS products,\r\n  array_agg(DISTINCT users.username) AS users,\r\n  array_agg(DISTINCT tags.tag) AS tags\r\nFROM \r\n  recepts \r\nLEFT JOIN \r\n  recept_products ON recepts.id = recept_products.recept_id \r\nLEFT JOIN \r\n  products ON recept_products.product_id = products.id\r\nLEFT JOIN \r\n  recept_users ON recepts.id = recept_users.recept_id \r\nLEFT JOIN \r\n  users ON recept_users.user_id = users.id\r\nLEFT JOIN \r\n  recept_tags ON recepts.id = recept_tags.recept_id \r\nLEFT JOIN \r\n  tags ON recept_tags.tag_id = tags.id\r\nGROUP BY \r\n  recepts.id;";
                 using (NpgsqlDataReader reader = cursor.ExecuteReader())
                 {
                     List<string> data = new List<string>();
