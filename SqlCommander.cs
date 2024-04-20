@@ -94,7 +94,7 @@ namespace shooter_server
                     cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
                     cursor.Parameters.AddWithValue("userId", senderId);
                     cursor.Parameters.AddWithValue("receptId", recept_id);
-                    int count = (int)cursor.ExecuteScalar();
+                    long count = (long)cursor.ExecuteScalar();
 
                     if (count > 0)
                     {
