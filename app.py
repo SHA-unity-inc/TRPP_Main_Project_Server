@@ -71,9 +71,11 @@ def index():
 @app.route('/get_logs')
 def get_logs():
     with open(output_file_path, 'r') as output_file:
-        lines = output_file.readlines()
+        content = output_file.read()
+        lines = content.split('\n')  # Split the content into lines
         last_25_lines = lines[-25:]
     return '\n'.join(last_25_lines)
+
 
 @app.route('/turn_on')
 def turn_on():
