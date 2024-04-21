@@ -41,9 +41,9 @@ namespace shooter_server
             }
         }
 
-        public async void SendMessagePlayer(string message, WebSocket ws)
+        public async void SendMessagePlayer(string message, WebSocket ws, int idRequest)
         {
-            await Players[ws].SendMessageAsync(ws, message);
+            await Players[ws].SendMessageAsync(ws, idRequest.ToString() + " " + message);
         }
 
 

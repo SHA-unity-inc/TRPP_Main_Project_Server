@@ -56,7 +56,10 @@ namespace shooter_server
                                 ExecuteRegistration(sqlCommand, cursor, senderId, dbConnection, player);
                                 break;
                             case string s when s.StartsWith("GetID"):
-                                lobby.SendMessagePlayer($"/cmdGetID {senderId}", webSocket);
+                                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                                credentials.RemoveAt(0);
+                                int requestId = int.Parse(credentials[0]);
+                                lobby.SendMessagePlayer($"/cmdGetID {senderId}", webSocket, requestId);
                                 break;
                             case string s when s.StartsWith("GetRecepts"):
                                 GetRecepts(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
@@ -97,7 +100,8 @@ namespace shooter_server
                 {
                     List<string> credentials = new List<string>(sqlCommand.Split(' '));
                     credentials.RemoveAt(0);
-                    int recept_id = int.Parse(credentials[0]);
+                    int requestId = int.Parse(credentials[0]);
+                    int recept_id = int.Parse(credentials[1]);
                     cursor.Parameters.AddWithValue("userId", senderId);
                     cursor.Parameters.AddWithValue("receptId", recept_id);
 
@@ -122,7 +126,7 @@ namespace shooter_server
                         cursor.CommandText = $"DELETE FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
                         cursor.ExecuteNonQuery();
                         transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans false", ws);
+                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
                     }
                     else
                     {
@@ -130,7 +134,7 @@ namespace shooter_server
                         cursor.CommandText = $"INSERT INTO disliked(user_id, recept_id) VALUES (@userId, @receptId)";
                         cursor.ExecuteNonQuery();
                         transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans true", ws);
+                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
                     }
                 }
                 catch (Exception e)
@@ -147,7 +151,8 @@ namespace shooter_server
             {
                 List<string> credentials = new List<string>(sqlCommand.Split(' '));
                 credentials.RemoveAt(0);
-                int recept_id = int.Parse(credentials[0]);
+                int requestId = int.Parse(credentials[0]);
+                int recept_id = int.Parse(credentials[1]);
                 cursor.Parameters.AddWithValue("userId", senderId);
                 cursor.Parameters.AddWithValue("receptId", recept_id);
 
@@ -158,13 +163,13 @@ namespace shooter_server
                 if (count > 0)
                 {
                     // Если запись существует, отправить сообщение игроку
-                    lobby.SendMessagePlayer($"/ans true", ws);
+                    lobby.SendMessagePlayer($"/ans true", ws, requestId);
                     Console.WriteLine("true");
                 }
                 else
                 {
                     // Если записи не существует, отправить сообщение игроку
-                    lobby.SendMessagePlayer($"/ans false", ws);
+                    lobby.SendMessagePlayer($"/ans false", ws, requestId);
                     Console.WriteLine("false");
                 }
             }
@@ -184,7 +189,8 @@ namespace shooter_server
                 {
                     List<string> credentials = new List<string>(sqlCommand.Split(' '));
                     credentials.RemoveAt(0);
-                    int recept_id = int.Parse(credentials[0]);
+                    int requestId = int.Parse(credentials[0]);
+                    int recept_id = int.Parse(credentials[1]);
                     cursor.Parameters.AddWithValue("userId", senderId);
                     cursor.Parameters.AddWithValue("receptId", recept_id);
 
@@ -209,7 +215,7 @@ namespace shooter_server
                         cursor.CommandText = $"DELETE FROM liked WHERE user_id = @userId AND recept_id = @receptId";
                         cursor.ExecuteNonQuery();
                         transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans false", ws);
+                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
                     }
                     else
                     {
@@ -217,7 +223,7 @@ namespace shooter_server
                         cursor.CommandText = $"INSERT INTO liked(user_id, recept_id) VALUES (@userId, @receptId)";
                         cursor.ExecuteNonQuery();
                         transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans true", ws);
+                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
                     }
                 }
                 catch (Exception e)
@@ -234,7 +240,8 @@ namespace shooter_server
             {
                 List<string> credentials = new List<string>(sqlCommand.Split(' '));
                 credentials.RemoveAt(0);
-                int recept_id = int.Parse(credentials[0]);
+                int requestId = int.Parse(credentials[0]);
+                int recept_id = int.Parse(credentials[1]);
                 cursor.Parameters.AddWithValue("userId", senderId);
                 cursor.Parameters.AddWithValue("receptId", recept_id);
 
@@ -245,13 +252,13 @@ namespace shooter_server
                 if (count > 0)
                 {
                     // Если запись существует, отправить сообщение игроку
-                    lobby.SendMessagePlayer($"/ans true", ws);
+                    lobby.SendMessagePlayer($"/ans true", ws, requestId);
                     Console.WriteLine("true");
                 }
                 else
                 {
                     // Если записи не существует, отправить сообщение игроку
-                    lobby.SendMessagePlayer($"/ans false", ws);
+                    lobby.SendMessagePlayer($"/ans false", ws, requestId);
                     Console.WriteLine("false");
                 }
             }
@@ -269,7 +276,8 @@ namespace shooter_server
             {
                 List<string> credentials = new List<string>(sqlCommand.Split(' '));
                 credentials.RemoveAt(0);
-                int id = int.Parse(credentials[0]);
+                int requestId = int.Parse(credentials[0]);
+                int id = int.Parse(credentials[1]);
 
                 cursor.CommandText = $"SELECT \r\n  recepts.html_content FROM \r\n recepts WHERE recepts.id = {id};";
                 using (NpgsqlDataReader reader = cursor.ExecuteReader())
@@ -282,7 +290,7 @@ namespace shooter_server
 
                     string message = string.Join("", data);
                     Console.WriteLine(message);
-                    lobby.SendMessagePlayer($"/ans true {message}", ws);
+                    lobby.SendMessagePlayer($"/ans true {message}", ws, requestId);
                 }
 
             }
@@ -299,7 +307,8 @@ namespace shooter_server
             {
                 List<string> credentials = new List<string>(sqlCommand.Split(' '));
                 credentials.RemoveAt(0);
-                int from = int.Parse(credentials[0]), to = int.Parse(credentials[1]);
+                int requestId = int.Parse(credentials[0]);
+                int from = int.Parse(credentials[1]), to = int.Parse(credentials[2]);
 
                 cursor.CommandText = $"SELECT \r\n  recepts.id, \r\n  recepts.title, \r\n  array_agg(DISTINCT products.name) AS products,\r\n  array_agg(DISTINCT users.username) AS users,\r\n  array_agg(DISTINCT tags.tag) AS tags\r\nFROM \r\n  recepts \r\nLEFT JOIN \r\n  recept_products ON recepts.id = recept_products.recept_id \r\nLEFT JOIN \r\n  products ON recept_products.product_id = products.id\r\nLEFT JOIN \r\n  recept_users ON recepts.id = recept_users.recept_id \r\nLEFT JOIN \r\n  users ON recept_users.user_id = users.id\r\nLEFT JOIN \r\n  recept_tags ON recepts.id = recept_tags.recept_id \r\nLEFT JOIN \r\n  tags ON recept_tags.tag_id = tags.id\r\nGROUP BY \r\n  recepts.id;";
                 using (NpgsqlDataReader reader = cursor.ExecuteReader())
@@ -333,7 +342,7 @@ namespace shooter_server
 
                     string message = string.Join("", data);
                     Console.WriteLine(message);
-                    lobby.SendMessagePlayer($"/ans true {message}", ws);
+                    lobby.SendMessagePlayer($"/ans true {message}", ws, requestId);
                 }
 
             }
@@ -351,7 +360,8 @@ namespace shooter_server
                 // Убираем "Login" из начала SQL-команды
                 List<string> credentials = new List<string>(sqlCommand.Split(' '));
                 credentials.RemoveAt(0);
-                string username = credentials[0], password = credentials[1];
+                int requestId = int.Parse(credentials[0]);
+                string username = credentials[1], password = credentials[2];
 
                 // Проверка, что пользователь с таким именем существует
                 cursor.CommandText = $"SELECT * FROM users WHERE username='{username}'";
@@ -382,13 +392,13 @@ namespace shooter_server
                                 lobby.Players[ws].Id = userId;
                                 // Вызываем add_player и передаем id
                                 lobby.SendMessageExcept($"Welcome, Player {lobby.Players[ws].Id}", ws);
-                                lobby.SendMessagePlayer($"/ans true", ws);
+                                lobby.SendMessagePlayer($"/ans true", ws, requestId);
                                 SendLoginResponse(senderId, userId, "success");
                             }
                             else
                             {
                                 SendLoginResponse(senderId, -1, "error", "Invalid password");
-                                lobby.SendMessagePlayer($"/ans false", ws);
+                                lobby.SendMessagePlayer($"/ans false", ws, requestId);
                             }
                         }
                     }
@@ -413,7 +423,8 @@ namespace shooter_server
             {
                 List<string> credentials = new List<string>(sqlCommand.Split(' '));
                 credentials.RemoveAt(0);
-                string username = credentials[0], password = credentials[1];
+                int requestId = int.Parse(credentials[0]);
+                string username = credentials[1], password = credentials[2];
 
                 // Начало транзакции
                 using (var transaction = dbConnection.BeginTransaction())
