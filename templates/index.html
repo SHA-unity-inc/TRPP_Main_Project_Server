@@ -48,6 +48,18 @@
                 });
         }
 
+        function updateLogs() {
+            fetch('/get_logs')
+                .then(response => response.text())
+                .then(data => {
+                    const logsElement = document.getElementById('logs');
+                    logsElement.textContent = data;
+                });
+        }
+
+        // Update logs every 2 seconds
+        setInterval(updateLogs, 2000);
+
         // Проверяем статус при загрузке страницы
         fetch('/get_status')
             .then(response => response.text())

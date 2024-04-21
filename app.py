@@ -68,6 +68,13 @@ def index():
     print(output_content)
     return render_template('index.html', server_status=server_status, output_content=output_content)
 
+@app.route('/get_logs')
+def get_logs():
+    with open(output_file_path, 'r') as output_file:
+        lines = output_file.readlines()
+        last_25_lines = lines[-25:]
+    return '\n'.join(last_25_lines)
+
 @app.route('/turn_on')
 def turn_on():
     global server_status
