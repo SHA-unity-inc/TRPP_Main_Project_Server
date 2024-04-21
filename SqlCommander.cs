@@ -159,11 +159,13 @@ namespace shooter_server
                 {
                     // Если запись существует, отправить сообщение игроку
                     lobby.SendMessagePlayer($"/ans true", ws);
+                    Console.WriteLine("true");
                 }
                 else
                 {
                     // Если записи не существует, отправить сообщение игроку
                     lobby.SendMessagePlayer($"/ans false", ws);
+                    Console.WriteLine("false");
                 }
             }
             catch (Exception e)
@@ -244,11 +246,13 @@ namespace shooter_server
                 {
                     // Если запись существует, отправить сообщение игроку
                     lobby.SendMessagePlayer($"/ans true", ws);
+                    Console.WriteLine("true");
                 }
                 else
                 {
                     // Если записи не существует, отправить сообщение игроку
                     lobby.SendMessagePlayer($"/ans false", ws);
+                    Console.WriteLine("false");
                 }
             }
             catch (Exception e)
