@@ -98,6 +98,8 @@ namespace shooter_server
                     List<string> credentials = new List<string>(sqlCommand.Split(' '));
                     credentials.RemoveAt(0);
                     int recept_id = int.Parse(credentials[0]);
+                    cursor.Parameters.AddWithValue("userId", senderId);
+                    cursor.Parameters.AddWithValue("receptId", recept_id);
 
                     // Проверка на существование записи в таблице liked
                     cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
@@ -112,8 +114,6 @@ namespace shooter_server
 
                     // Проверка на существование записи
                     cursor.CommandText = $"SELECT COUNT(*) FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
-                    cursor.Parameters.AddWithValue("userId", senderId);
-                    cursor.Parameters.AddWithValue("receptId", recept_id);
                     long count = (long)cursor.ExecuteScalar();
 
                     if (count > 0)
@@ -148,11 +148,11 @@ namespace shooter_server
                 List<string> credentials = new List<string>(sqlCommand.Split(' '));
                 credentials.RemoveAt(0);
                 int recept_id = int.Parse(credentials[0]);
+                cursor.Parameters.AddWithValue("userId", senderId);
+                cursor.Parameters.AddWithValue("receptId", recept_id);
 
                 // Проверка на существование записи
                 cursor.CommandText = $"SELECT COUNT(*) FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
-                cursor.Parameters.AddWithValue("userId", senderId);
-                cursor.Parameters.AddWithValue("receptId", recept_id);
                 long count = (long)cursor.ExecuteScalar();
 
                 if (count > 0)
@@ -183,6 +183,8 @@ namespace shooter_server
                     List<string> credentials = new List<string>(sqlCommand.Split(' '));
                     credentials.RemoveAt(0);
                     int recept_id = int.Parse(credentials[0]);
+                    cursor.Parameters.AddWithValue("userId", senderId);
+                    cursor.Parameters.AddWithValue("receptId", recept_id);
 
                     // Проверка на существование записи в таблице disliked
                     cursor.CommandText = $"SELECT COUNT(*) FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
@@ -197,8 +199,6 @@ namespace shooter_server
 
                     // Проверка на существование записи
                     cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
-                    cursor.Parameters.AddWithValue("userId", senderId);
-                    cursor.Parameters.AddWithValue("receptId", recept_id);
                     long count = (long)cursor.ExecuteScalar();
 
                     if (count > 0)
@@ -233,11 +233,11 @@ namespace shooter_server
                 List<string> credentials = new List<string>(sqlCommand.Split(' '));
                 credentials.RemoveAt(0);
                 int recept_id = int.Parse(credentials[0]);
+                cursor.Parameters.AddWithValue("userId", senderId);
+                cursor.Parameters.AddWithValue("receptId", recept_id);
 
                 // Проверка на существование записи
                 cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
-                cursor.Parameters.AddWithValue("userId", senderId);
-                cursor.Parameters.AddWithValue("receptId", recept_id);
                 long count = (long)cursor.ExecuteScalar();
 
                 if (count > 0)
