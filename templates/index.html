@@ -59,9 +59,10 @@
                 .then(response => response.text())
                 .then(data => {
                     const logsElement = document.getElementById('logs');
-                    logsElement.textContent = data;
+                    logsElement.innerHTML = data.replace(/\n/g, '<br>');
                 });
         }
+
 
         function getStatus() {
             fetch('/get_status')
