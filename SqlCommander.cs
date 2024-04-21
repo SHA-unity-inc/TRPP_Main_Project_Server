@@ -67,6 +67,9 @@ namespace shooter_server
                             case string s when s.StartsWith("Like"):
                                 Like(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
                                 break;
+                            case string s when s.StartsWith("IsLike"):
+                                IsLike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                break;
                             default:
                                 Console.WriteLine("Command not found");
                                 break;
@@ -120,6 +123,38 @@ namespace shooter_server
                 }
             }
         }
+
+        private void IsLike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            try
+            {
+                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                credentials.RemoveAt(0);
+                int recept_id = int.Parse(credentials[0]);
+
+                // Проверка на существование записи
+                cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
+                cursor.Parameters.AddWithValue("userId", senderId);
+                cursor.Parameters.AddWithValue("receptId", recept_id);
+                long count = (long)cursor.ExecuteScalar();
+
+                if (count > 0)
+                {
+                    // Если запись существует, отправить сообщение игроку
+                    lobby.SendMessagePlayer($"/ans true", ws);
+                }
+                else
+                {
+                    // Если записи не существует, отправить сообщение игроку
+                    lobby.SendMessagePlayer($"/ans false", ws);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error executing IsLike command: {e}");
+            }
+        }
+
 
 
         private void GetRecept(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
