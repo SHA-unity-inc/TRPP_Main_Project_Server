@@ -62,8 +62,10 @@ def run_flask():
 
 @app.route('/')
 def index():
+    output_content = ""
     with open(output_file_path, 'r') as output_file:
-        output_content = output_file.read()
+        output_content += output_file.read()
+    print(output_content)
     return render_template('index.html', server_status=server_status, output_content=output_content)
 
 @app.route('/turn_on')

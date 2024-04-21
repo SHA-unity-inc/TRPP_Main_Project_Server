@@ -126,8 +126,8 @@ namespace shooter_server
         {
             try
             {
-                sqlCommand = sqlCommand.Substring(10);
-                string[] credentials = sqlCommand.Split(" ");
+                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                credentials.RemoveAt(0);
                 int id = int.Parse(credentials[0]);
 
                 cursor.CommandText = $"SELECT \r\n  recepts.html_content FROM \r\n recepts WHERE recepts.id = {id};";
@@ -156,8 +156,8 @@ namespace shooter_server
         {
             try
             {
-                sqlCommand = sqlCommand.Substring(11);
-                string[] credentials = sqlCommand.Split(" ");
+                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                credentials.RemoveAt(0);
                 int from = int.Parse(credentials[0]), to = int.Parse(credentials[1]);
 
                 cursor.CommandText = $"SELECT \r\n  recepts.id, \r\n  recepts.title, \r\n  array_agg(DISTINCT products.name) AS products,\r\n  array_agg(DISTINCT users.username) AS users,\r\n  array_agg(DISTINCT tags.tag) AS tags\r\nFROM \r\n  recepts \r\nLEFT JOIN \r\n  recept_products ON recepts.id = recept_products.recept_id \r\nLEFT JOIN \r\n  products ON recept_products.product_id = products.id\r\nLEFT JOIN \r\n  recept_users ON recepts.id = recept_users.recept_id \r\nLEFT JOIN \r\n  users ON recept_users.user_id = users.id\r\nLEFT JOIN \r\n  recept_tags ON recepts.id = recept_tags.recept_id \r\nLEFT JOIN \r\n  tags ON recept_tags.tag_id = tags.id\r\nGROUP BY \r\n  recepts.id;";
@@ -208,8 +208,8 @@ namespace shooter_server
             try
             {
                 // Убираем "Login" из начала SQL-команды
-                sqlCommand = sqlCommand.Substring(6);
-                string[] credentials = sqlCommand.Split(" ");
+                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                credentials.RemoveAt(0);
                 string username = credentials[0], password = credentials[1];
 
                 // Проверка, что пользователь с таким именем существует
@@ -270,10 +270,8 @@ namespace shooter_server
         {
             try
             {
-                // Убираем "Registration" из начала SQL-команды
-                sqlCommand = sqlCommand.Substring(13);
-                // Парсим JSON и извлекаем данные
-                string[] credentials = sqlCommand.Split(" ");
+                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                credentials.RemoveAt(0);
                 string username = credentials[0], password = credentials[1];
 
                 // Начало транзакции
