@@ -79,6 +79,12 @@ namespace shooter_server
                             case string s when s.StartsWith("IsDislike"):
                                 IsDislike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
                                 break;
+                            case string s when s.StartsWith("Favorite"):
+                                Favorite(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                break;
+                            case string s when s.StartsWith("IsFavorite"):
+                                IsFavorite(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                break;
                             default:
                                 Console.WriteLine("Command not found");
                                 break;
@@ -268,6 +274,83 @@ namespace shooter_server
             }
         }
 
+
+
+        private void Favorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            using (var transaction = dbConnection.BeginTransaction())
+            {
+                try
+                {
+                    List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                    credentials.RemoveAt(0);
+                    int requestId = int.Parse(credentials[0]);
+                    int recept_id = int.Parse(credentials[1]);
+                    cursor.Parameters.AddWithValue("userId", senderId);
+                    cursor.Parameters.AddWithValue("receptId", recept_id);
+
+                    // Check for the existence of the record
+                    cursor.CommandText = $"SELECT COUNT(*) FROM favorites WHERE user_id = @userId AND recept_id = @receptId";
+                    long count = (long)cursor.ExecuteScalar();
+
+                    if (count > 0)
+                    {
+                        // If the record exists, delete it
+                        cursor.CommandText = $"DELETE FROM favorites WHERE user_id = @userId AND recept_id = @receptId";
+                        cursor.ExecuteNonQuery();
+                        transaction.Commit();
+                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                    }
+                    else
+                    {
+                        // If the record does not exist, add it
+                        cursor.CommandText = $"INSERT INTO favorites(user_id, recept_id) VALUES (@userId, @receptId)";
+                        cursor.ExecuteNonQuery();
+                        transaction.Commit();
+                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                    }
+                }
+                catch (Exception e)
+                {
+                    SendLoginResponse(senderId, -1, "error", "Favorite Not Create");
+                    Console.WriteLine($"Error executing Favorite command: {e}");
+                }
+            }
+        }
+
+        private void IsFavorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            try
+            {
+                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                credentials.RemoveAt(0);
+                int requestId = int.Parse(credentials[0]);
+                int recept_id = int.Parse(credentials[1]);
+                cursor.Parameters.AddWithValue("userId", senderId);
+                cursor.Parameters.AddWithValue("receptId", recept_id);
+
+                // Check for the existence of the record
+                cursor.CommandText = $"SELECT COUNT(*) FROM favorite WHERE user_id = @userId AND recept_id = @receptId";
+                long count = (long)cursor.ExecuteScalar();
+
+                if (count > 0)
+                {
+                    // If the record exists, send a message to the player
+                    lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                    Console.WriteLine("true");
+                }
+                else
+                {
+                    // If the record does not exist, send a message to the player
+                    lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                    Console.WriteLine("false");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error executing IsFavorite command: {e}");
+            }
+        }
 
 
         private void GetRecept(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
