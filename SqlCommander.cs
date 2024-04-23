@@ -330,7 +330,7 @@ namespace shooter_server
                 cursor.Parameters.AddWithValue("receptId", recept_id);
 
                 // Check for the existence of the record
-                cursor.CommandText = $"SELECT COUNT(*) FROM favorite WHERE user_id = @userId AND recept_id = @receptId";
+                cursor.CommandText = $"SELECT COUNT(*) FROM favorites WHERE user_id = @userId AND recept_id = @receptId";
                 long count = (long)cursor.ExecuteScalar();
 
                 if (count > 0)
