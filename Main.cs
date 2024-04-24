@@ -32,7 +32,7 @@ namespace shooter_server
                 var context = await httpListener.GetContextAsync();
                 if (context.Request.IsWebSocketRequest)
                 {
-                    await ProcessWebSocketRequest(context);
+                    Task.Run(() => ProcessWebSocketRequest(context));
                 }
             }
         }
