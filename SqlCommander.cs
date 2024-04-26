@@ -50,40 +50,37 @@ namespace shooter_server
                         switch (sqlCommand)
                         {
                             case string s when s.StartsWith("Login"):
-                                ExecuteLogin(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => ExecuteLogin(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("Registration"):
-                                ExecuteRegistration(sqlCommand, cursor, senderId, dbConnection, player);
+                                Task.Run(() => ExecuteRegistration(sqlCommand, cursor, senderId, dbConnection, player));
                                 break;
                             case string s when s.StartsWith("GetID"):
-                                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                                credentials.RemoveAt(0);
-                                int requestId = int.Parse(credentials[0]);
-                                lobby.SendMessagePlayer($"/cmdGetID {senderId}", webSocket, requestId);
+                                Task.Run(() => GetId(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("GetRecepts"):
-                                GetRecepts(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => GetRecepts(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("GetRecept"):
-                                GetRecept(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => GetRecept(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("Like"):
-                                Like(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => Like(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("IsLike"):
-                                IsLike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => IsLike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("Dislike"):
-                                Dislike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => Dislike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("IsDislike"):
-                                IsDislike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => IsDislike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("Favorite"):
-                                Favorite(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => Favorite(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             case string s when s.StartsWith("IsFavorite"):
-                                IsFavorite(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket);
+                                Task.Run(() => IsFavorite(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
                                 break;
                             default:
                                 Console.WriteLine("Command not found");
@@ -98,7 +95,15 @@ namespace shooter_server
             }
         }
 
-        private void Dislike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task GetId(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            List<string> credentials = new List<string>(sqlCommand.Split(' '));
+            credentials.RemoveAt(0);
+            int requestId = int.Parse(credentials[0]);
+            lobby.SendMessagePlayer($"/cmdGetID {senderId}", webSocket, requestId);
+        }
+
+        private async Task Dislike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var transaction = dbConnection.BeginTransaction())
             {
@@ -151,7 +156,7 @@ namespace shooter_server
             }
         }
 
-        private void IsDislike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task IsDislike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             try
             {
@@ -187,7 +192,7 @@ namespace shooter_server
 
 
 
-        private void Like(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task Like(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var transaction = dbConnection.BeginTransaction())
             {
@@ -240,7 +245,7 @@ namespace shooter_server
             }
         }
 
-        private void IsLike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task IsLike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             try
             {
@@ -276,7 +281,7 @@ namespace shooter_server
 
 
 
-        private void Favorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task Favorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var transaction = dbConnection.BeginTransaction())
             {
@@ -318,7 +323,7 @@ namespace shooter_server
             }
         }
 
-        private void IsFavorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task IsFavorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             try
             {
@@ -353,7 +358,7 @@ namespace shooter_server
         }
 
 
-        private void GetRecept(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task GetRecept(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             try
             {
@@ -384,7 +389,7 @@ namespace shooter_server
             }
         }
 
-        private void GetRecepts(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task GetRecepts(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             try
             {
@@ -436,7 +441,7 @@ namespace shooter_server
             }
         }
 
-        private void ExecuteLogin(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task ExecuteLogin(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             try
             {
@@ -500,7 +505,7 @@ namespace shooter_server
             }
         }
 
-        private void ExecuteRegistration(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Player player)
+        private async Task ExecuteRegistration(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Player player)
         {
             try
             {
@@ -572,14 +577,14 @@ namespace shooter_server
         }
 
 
-        private void SendLoginResponse(int senderId, int sqlId, string status, string message = "")
+        private async Task SendLoginResponse(int senderId, int sqlId, string status, string message = "")
         {
             Console.WriteLine($"{senderId} {sqlId} {status} {message}");
             // Отправка ответа на вход
             // ... (ваш код отправки сообщения)
         }
 
-        private void SendRegistrationResponse(int senderId, string status, string message = "")
+        private async Task SendRegistrationResponse(int senderId, string status, string message = "")
         {
             Console.WriteLine($"{senderId} {status} {message}");
             // Отправка ответа на регистрацию

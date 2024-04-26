@@ -64,7 +64,7 @@ namespace shooter_server
                         if (message.StartsWith("/sql"))
                         {
                             message = message.Substring("/sql".Length).Trim();
-                            await mainLobby.SqlCommander.ExecuteSqlCommand(mainLobby, webSocket, message, mainLobby.Players[webSocket]);
+                            Task.Run(() => mainLobby.SqlCommander.ExecuteSqlCommand(mainLobby, webSocket, message, mainLobby.Players[webSocket]));
                         }
                     }
                 } while (!result.CloseStatus.HasValue || result.CloseStatus != WebSocketCloseStatus.NormalClosure);
