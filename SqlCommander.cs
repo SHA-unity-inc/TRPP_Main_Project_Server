@@ -100,7 +100,7 @@ namespace shooter_server
             List<string> credentials = new List<string>(sqlCommand.Split(' '));
             credentials.RemoveAt(0);
             int requestId = int.Parse(credentials[0]);
-            lobby.SendMessagePlayer($"/cmdGetID {senderId}", webSocket, requestId);
+            lobby.SendMessagePlayer($"/cmdGetID {senderId}", ws, requestId);
         }
 
         private async Task Dislike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
