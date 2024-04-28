@@ -39,63 +39,59 @@ namespace shooter_server
                 await dbConnection.OpenAsync();
                 Console.WriteLine(dbConnection.ConnectionString);
 
-                // Создание курсора
-                using (var cursor = dbConnection.CreateCommand())
-                {
-                    int senderId = player.Id;
+                int senderId = player.Id;
 
-                    try
+                try
+                {
+                    // Определение типа SQL-команды
+                    switch (sqlCommand)
                     {
-                        // Определение типа SQL-команды
-                        switch (sqlCommand)
-                        {
-                            case string s when s.StartsWith("Login"):
-                                Task.Run(() => ExecuteLogin(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("Registration"):
-                                Task.Run(() => ExecuteRegistration(sqlCommand, cursor, senderId, dbConnection, player));
-                                break;
-                            case string s when s.StartsWith("GetID"):
-                                Task.Run(() => GetId(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("GetRecepts"):
-                                Task.Run(() => GetRecepts(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("GetRecept"):
-                                Task.Run(() => GetRecept(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("Like"):
-                                Task.Run(() => Like(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("IsLike"):
-                                Task.Run(() => IsLike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("Dislike"):
-                                Task.Run(() => Dislike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("IsDislike"):
-                                Task.Run(() => IsDislike(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("Favorite"):
-                                Task.Run(() => Favorite(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            case string s when s.StartsWith("IsFavorite"):
-                                Task.Run(() => IsFavorite(sqlCommand, cursor, senderId, dbConnection, lobby, webSocket));
-                                break;
-                            default:
-                                Console.WriteLine("Command not found");
-                                break;
-                        }
+                        case string s when s.StartsWith("Login"):
+                            await Task.Run(() => ExecuteLogin(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("Registration"):
+                            await Task.Run(() => ExecuteRegistration(sqlCommand, senderId, dbConnection, player));
+                            break;
+                        case string s when s.StartsWith("GetID"):
+                            await Task.Run(() => GetId(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("GetRecepts"):
+                            await Task.Run(() => GetRecepts(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("GetRecept"):
+                            await Task.Run(() => GetRecept(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("Like"):
+                            await Task.Run(() => Like(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("IsLike"):
+                            await Task.Run(() => IsLike(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("Dislike"):
+                            await Task.Run(() => Dislike(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("IsDislike"):
+                            await Task.Run(() => IsDislike(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("Favorite"):
+                            await Task.Run(() => Favorite(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        case string s when s.StartsWith("IsFavorite"):
+                            await Task.Run(() => IsFavorite(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
+                        default:
+                            Console.WriteLine("Command not found");
+                            break;
                     }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"Error executing SQL command: {e}");
-                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error executing SQL command: {e}");
                 }
             }
         }
 
-        private async Task GetId(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task GetId(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             List<string> credentials = new List<string>(sqlCommand.Split(' '));
             credentials.RemoveAt(0);
@@ -103,9 +99,65 @@ namespace shooter_server
             lobby.SendMessagePlayer($"/cmdGetID {senderId}", ws, requestId);
         }
 
-        private async Task Dislike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task Dislike(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
-            using (var transaction = dbConnection.BeginTransaction())
+            using (var cursor = dbConnection.CreateCommand())
+            {
+                using (var transaction = dbConnection.BeginTransaction())
+                {
+                    try
+                    {
+                        List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                        credentials.RemoveAt(0);
+                        int requestId = int.Parse(credentials[0]);
+                        int recept_id = int.Parse(credentials[1]);
+                        cursor.Parameters.AddWithValue("userId", senderId);
+                        cursor.Parameters.AddWithValue("receptId", recept_id);
+
+                        // Проверка на существование записи в таблице liked
+                        cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
+                        long likedCount = (long)cursor.ExecuteScalar();
+
+                        if (likedCount > 0)
+                        {
+                            // Если запись существует в таблице liked, удалить ее
+                            cursor.CommandText = $"DELETE FROM liked WHERE user_id = @userId AND recept_id = @receptId";
+                            cursor.ExecuteNonQuery();
+                        }
+
+                        // Проверка на существование записи
+                        cursor.CommandText = $"SELECT COUNT(*) FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
+                        long count = (long)cursor.ExecuteScalar();
+
+                        if (count > 0)
+                        {
+                            // Если запись существует, удалить ее
+                            cursor.CommandText = $"DELETE FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
+                            cursor.ExecuteNonQuery();
+                            transaction.Commit();
+                            lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        }
+                        else
+                        {
+                            // Если записи не существует, добавить ее
+                            cursor.CommandText = $"INSERT INTO disliked(user_id, recept_id) VALUES (@userId, @receptId)";
+                            cursor.ExecuteNonQuery();
+                            transaction.Commit();
+                            lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        SendLoginResponse(senderId, -1, "error", "Dislike Not Create");
+                        Console.WriteLine($"Error executing Login command: {e}");
+                    }
+                }
+            }
+        }
+
+        private async Task IsDislike(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            using (var cursor = dbConnection.CreateCommand())
             {
                 try
                 {
@@ -116,85 +168,91 @@ namespace shooter_server
                     cursor.Parameters.AddWithValue("userId", senderId);
                     cursor.Parameters.AddWithValue("receptId", recept_id);
 
-                    // Проверка на существование записи в таблице liked
-                    cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
-                    long likedCount = (long)cursor.ExecuteScalar();
-
-                    if (likedCount > 0)
-                    {
-                        // Если запись существует в таблице liked, удалить ее
-                        cursor.CommandText = $"DELETE FROM liked WHERE user_id = @userId AND recept_id = @receptId";
-                        cursor.ExecuteNonQuery();
-                    }
-
                     // Проверка на существование записи
                     cursor.CommandText = $"SELECT COUNT(*) FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
                     long count = (long)cursor.ExecuteScalar();
 
                     if (count > 0)
                     {
-                        // Если запись существует, удалить ее
-                        cursor.CommandText = $"DELETE FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
-                        cursor.ExecuteNonQuery();
-                        transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        // Если запись существует, отправить сообщение игроку
+                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        Console.WriteLine("true");
                     }
                     else
                     {
-                        // Если записи не существует, добавить ее
-                        cursor.CommandText = $"INSERT INTO disliked(user_id, recept_id) VALUES (@userId, @receptId)";
-                        cursor.ExecuteNonQuery();
-                        transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        // Если записи не существует, отправить сообщение игроку
+                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        Console.WriteLine("false");
                     }
                 }
                 catch (Exception e)
                 {
-                    SendLoginResponse(senderId, -1, "error", "Dislike Not Create");
-                    Console.WriteLine($"Error executing Login command: {e}");
+                    Console.WriteLine($"Error executing IsDislike command: {e}");
                 }
             }
         }
 
-        private async Task IsDislike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+
+
+        private async Task Like(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
-            try
+            using (var cursor = dbConnection.CreateCommand())
             {
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
-                int recept_id = int.Parse(credentials[1]);
-                cursor.Parameters.AddWithValue("userId", senderId);
-                cursor.Parameters.AddWithValue("receptId", recept_id);
-
-                // Проверка на существование записи
-                cursor.CommandText = $"SELECT COUNT(*) FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
-                long count = (long)cursor.ExecuteScalar();
-
-                if (count > 0)
+                using (var transaction = dbConnection.BeginTransaction())
                 {
-                    // Если запись существует, отправить сообщение игроку
-                    lobby.SendMessagePlayer($"/ans true", ws, requestId);
-                    Console.WriteLine("true");
+                    try
+                    {
+                        List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                        credentials.RemoveAt(0);
+                        int requestId = int.Parse(credentials[0]);
+                        int recept_id = int.Parse(credentials[1]);
+                        cursor.Parameters.AddWithValue("userId", senderId);
+                        cursor.Parameters.AddWithValue("receptId", recept_id);
+
+                        // Проверка на существование записи в таблице disliked
+                        cursor.CommandText = $"SELECT COUNT(*) FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
+                        long dislikedCount = (long)cursor.ExecuteScalar();
+
+                        if (dislikedCount > 0)
+                        {
+                            // Если запись существует в таблице disliked, удалить ее
+                            cursor.CommandText = $"DELETE FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
+                            cursor.ExecuteNonQuery();
+                        }
+
+                        // Проверка на существование записи
+                        cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
+                        long count = (long)cursor.ExecuteScalar();
+
+                        if (count > 0)
+                        {
+                            // Если запись существует, удалить ее
+                            cursor.CommandText = $"DELETE FROM liked WHERE user_id = @userId AND recept_id = @receptId";
+                            cursor.ExecuteNonQuery();
+                            transaction.Commit();
+                            lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        }
+                        else
+                        {
+                            // Если записи не существует, добавить ее
+                            cursor.CommandText = $"INSERT INTO liked(user_id, recept_id) VALUES (@userId, @receptId)";
+                            cursor.ExecuteNonQuery();
+                            transaction.Commit();
+                            lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        SendLoginResponse(senderId, -1, "error", "Like Not Create");
+                        Console.WriteLine($"Error executing Login command: {e}");
+                    }
                 }
-                else
-                {
-                    // Если записи не существует, отправить сообщение игроку
-                    lobby.SendMessagePlayer($"/ans false", ws, requestId);
-                    Console.WriteLine("false");
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error executing IsDislike command: {e}");
             }
         }
 
-
-
-        private async Task Like(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task IsLike(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
-            using (var transaction = dbConnection.BeginTransaction())
+            using (var cursor = dbConnection.CreateCommand())
             {
                 try
                 {
@@ -205,77 +263,27 @@ namespace shooter_server
                     cursor.Parameters.AddWithValue("userId", senderId);
                     cursor.Parameters.AddWithValue("receptId", recept_id);
 
-                    // Проверка на существование записи в таблице disliked
-                    cursor.CommandText = $"SELECT COUNT(*) FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
-                    long dislikedCount = (long)cursor.ExecuteScalar();
-
-                    if (dislikedCount > 0)
-                    {
-                        // Если запись существует в таблице disliked, удалить ее
-                        cursor.CommandText = $"DELETE FROM disliked WHERE user_id = @userId AND recept_id = @receptId";
-                        cursor.ExecuteNonQuery();
-                    }
-
                     // Проверка на существование записи
                     cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
                     long count = (long)cursor.ExecuteScalar();
 
                     if (count > 0)
                     {
-                        // Если запись существует, удалить ее
-                        cursor.CommandText = $"DELETE FROM liked WHERE user_id = @userId AND recept_id = @receptId";
-                        cursor.ExecuteNonQuery();
-                        transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        // Если запись существует, отправить сообщение игроку
+                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        Console.WriteLine("true");
                     }
                     else
                     {
-                        // Если записи не существует, добавить ее
-                        cursor.CommandText = $"INSERT INTO liked(user_id, recept_id) VALUES (@userId, @receptId)";
-                        cursor.ExecuteNonQuery();
-                        transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        // Если записи не существует, отправить сообщение игроку
+                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        Console.WriteLine("false");
                     }
                 }
                 catch (Exception e)
                 {
-                    SendLoginResponse(senderId, -1, "error", "Like Not Create");
-                    Console.WriteLine($"Error executing Login command: {e}");
+                    Console.WriteLine($"Error executing IsLike command: {e}");
                 }
-            }
-        }
-
-        private async Task IsLike(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
-        {
-            try
-            {
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
-                int recept_id = int.Parse(credentials[1]);
-                cursor.Parameters.AddWithValue("userId", senderId);
-                cursor.Parameters.AddWithValue("receptId", recept_id);
-
-                // Проверка на существование записи
-                cursor.CommandText = $"SELECT COUNT(*) FROM liked WHERE user_id = @userId AND recept_id = @receptId";
-                long count = (long)cursor.ExecuteScalar();
-
-                if (count > 0)
-                {
-                    // Если запись существует, отправить сообщение игроку
-                    lobby.SendMessagePlayer($"/ans true", ws, requestId);
-                    Console.WriteLine("true");
-                }
-                else
-                {
-                    // Если записи не существует, отправить сообщение игроку
-                    lobby.SendMessagePlayer($"/ans false", ws, requestId);
-                    Console.WriteLine("false");
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error executing IsLike command: {e}");
             }
         }
 
@@ -283,7 +291,52 @@ namespace shooter_server
 
         private async Task Favorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
-            using (var transaction = dbConnection.BeginTransaction())
+            using (var cursor = dbConnection.CreateCommand())
+            {
+                using (var transaction = dbConnection.BeginTransaction())
+                {
+                    try
+                    {
+                        List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                        credentials.RemoveAt(0);
+                        int requestId = int.Parse(credentials[0]);
+                        int recept_id = int.Parse(credentials[1]);
+                        cursor.Parameters.AddWithValue("userId", senderId);
+                        cursor.Parameters.AddWithValue("receptId", recept_id);
+
+                        // Check for the existence of the record
+                        cursor.CommandText = $"SELECT COUNT(*) FROM favorites WHERE user_id = @userId AND recept_id = @receptId";
+                        long count = (long)cursor.ExecuteScalar();
+
+                        if (count > 0)
+                        {
+                            // If the record exists, delete it
+                            cursor.CommandText = $"DELETE FROM favorites WHERE user_id = @userId AND recept_id = @receptId";
+                            cursor.ExecuteNonQuery();
+                            transaction.Commit();
+                            lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        }
+                        else
+                        {
+                            // If the record does not exist, add it
+                            cursor.CommandText = $"INSERT INTO favorites(user_id, recept_id) VALUES (@userId, @receptId)";
+                            cursor.ExecuteNonQuery();
+                            transaction.Commit();
+                            lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        SendLoginResponse(senderId, -1, "error", "Favorite Not Create");
+                        Console.WriteLine($"Error executing Favorite command: {e}");
+                    }
+                }
+            }
+        }
+
+        private async Task IsFavorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            using (var cursor = dbConnection.CreateCommand())
             {
                 try
                 {
@@ -300,279 +353,251 @@ namespace shooter_server
 
                     if (count > 0)
                     {
-                        // If the record exists, delete it
-                        cursor.CommandText = $"DELETE FROM favorites WHERE user_id = @userId AND recept_id = @receptId";
-                        cursor.ExecuteNonQuery();
-                        transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        // If the record exists, send a message to the player
+                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        Console.WriteLine("true");
                     }
                     else
                     {
-                        // If the record does not exist, add it
-                        cursor.CommandText = $"INSERT INTO favorites(user_id, recept_id) VALUES (@userId, @receptId)";
-                        cursor.ExecuteNonQuery();
-                        transaction.Commit();
-                        lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                        // If the record does not exist, send a message to the player
+                        lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                        Console.WriteLine("false");
                     }
                 }
                 catch (Exception e)
                 {
-                    SendLoginResponse(senderId, -1, "error", "Favorite Not Create");
-                    Console.WriteLine($"Error executing Favorite command: {e}");
+                    Console.WriteLine($"Error executing IsFavorite command: {e}");
                 }
-            }
-        }
-
-        private async Task IsFavorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
-        {
-            try
-            {
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
-                int recept_id = int.Parse(credentials[1]);
-                cursor.Parameters.AddWithValue("userId", senderId);
-                cursor.Parameters.AddWithValue("receptId", recept_id);
-
-                // Check for the existence of the record
-                cursor.CommandText = $"SELECT COUNT(*) FROM favorites WHERE user_id = @userId AND recept_id = @receptId";
-                long count = (long)cursor.ExecuteScalar();
-
-                if (count > 0)
-                {
-                    // If the record exists, send a message to the player
-                    lobby.SendMessagePlayer($"/ans true", ws, requestId);
-                    Console.WriteLine("true");
-                }
-                else
-                {
-                    // If the record does not exist, send a message to the player
-                    lobby.SendMessagePlayer($"/ans false", ws, requestId);
-                    Console.WriteLine("false");
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error executing IsFavorite command: {e}");
             }
         }
 
 
         private async Task GetRecept(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
-            try
+            using (var cursor = dbConnection.CreateCommand())
             {
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
-                int id = int.Parse(credentials[1]);
-
-                cursor.CommandText = $"SELECT \r\n  recepts.html_content FROM \r\n recepts WHERE recepts.id = {id};";
-                using (NpgsqlDataReader reader = cursor.ExecuteReader())
+                try
                 {
-                    List<string> data = new List<string>();
-                    while (reader.Read())
+                    List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                    credentials.RemoveAt(0);
+                    int requestId = int.Parse(credentials[0]);
+                    int id = int.Parse(credentials[1]);
+
+                    cursor.CommandText = $"SELECT \r\n  recepts.html_content FROM \r\n recepts WHERE recepts.id = {id};";
+                    using (NpgsqlDataReader reader = cursor.ExecuteReader())
                     {
-                        data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
+                        List<string> data = new List<string>();
+                        while (reader.Read())
+                        {
+                            data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
+                        }
+
+                        string message = string.Join("", data);
+                        Console.WriteLine(message);
+                        lobby.SendMessagePlayer($"/ans true {message}", ws, requestId);
                     }
 
-                    string message = string.Join("", data);
-                    Console.WriteLine(message);
-                    lobby.SendMessagePlayer($"/ans true {message}", ws, requestId);
                 }
-
-            }
-            catch (Exception e)
-            {
-                SendLoginResponse(senderId, -1, "error", "Recepts Not Found");
-                Console.WriteLine($"Error executing Login command: {e}");
+                catch (Exception e)
+                {
+                    SendLoginResponse(senderId, -1, "error", "Recepts Not Found");
+                    Console.WriteLine($"Error executing Login command: {e}");
+                }
             }
         }
 
         private async Task GetRecepts(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
-            try
+            using (var cursor = dbConnection.CreateCommand())
             {
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
-                int from = int.Parse(credentials[1]), to = int.Parse(credentials[2]);
-
-                cursor.CommandText = $"SELECT \r\n  recepts.id, \r\n  recepts.title, \r\n  array_agg(DISTINCT products.name) AS products,\r\n  array_agg(DISTINCT users.username) AS users,\r\n  array_agg(DISTINCT tags.tag) AS tags\r\nFROM \r\n  recepts \r\nLEFT JOIN \r\n  recept_products ON recepts.id = recept_products.recept_id \r\nLEFT JOIN \r\n  products ON recept_products.product_id = products.id\r\nLEFT JOIN \r\n  recept_users ON recepts.id = recept_users.recept_id \r\nLEFT JOIN \r\n  users ON recept_users.user_id = users.id\r\nLEFT JOIN \r\n  recept_tags ON recepts.id = recept_tags.recept_id \r\nLEFT JOIN \r\n  tags ON recept_tags.tag_id = tags.id\r\nGROUP BY \r\n  recepts.id;";
-                using (NpgsqlDataReader reader = cursor.ExecuteReader())
+                try
                 {
-                    List<string> data = new List<string>();
-                    while (reader.Read())
+                    List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                    credentials.RemoveAt(0);
+                    int requestId = int.Parse(credentials[0]);
+                    int from = int.Parse(credentials[1]), to = int.Parse(credentials[2]);
+
+                    cursor.CommandText = $"SELECT \r\n  recepts.id, \r\n  recepts.title, \r\n  array_agg(DISTINCT products.name) AS products,\r\n  array_agg(DISTINCT users.username) AS users,\r\n  array_agg(DISTINCT tags.tag) AS tags\r\nFROM \r\n  recepts \r\nLEFT JOIN \r\n  recept_products ON recepts.id = recept_products.recept_id \r\nLEFT JOIN \r\n  products ON recept_products.product_id = products.id\r\nLEFT JOIN \r\n  recept_users ON recepts.id = recept_users.recept_id \r\nLEFT JOIN \r\n  users ON recept_users.user_id = users.id\r\nLEFT JOIN \r\n  recept_tags ON recepts.id = recept_tags.recept_id \r\nLEFT JOIN \r\n  tags ON recept_tags.tag_id = tags.id\r\nGROUP BY \r\n  recepts.id;";
+                    using (NpgsqlDataReader reader = cursor.ExecuteReader())
                     {
-                        data.Add("_text_");
+                        List<string> data = new List<string>();
+                        while (reader.Read())
+                        {
+                            data.Add("_text_");
 
-                        data.Add(reader["id"] == DBNull.Value ? "-" : reader["id"].ToString());
+                            data.Add(reader["id"] == DBNull.Value ? "-" : reader["id"].ToString());
 
-                        data.Add(" . ");
+                            data.Add(" . ");
 
-                        data.Add("<l>");
-                        data.Add(reader["title"] == DBNull.Value ? "-" : reader["title"].ToString());
-                        data.Add("</l>");
+                            data.Add("<l>");
+                            data.Add(reader["title"] == DBNull.Value ? "-" : reader["title"].ToString());
+                            data.Add("</l>");
 
-                        data.Add(" . ");
+                            data.Add(" . ");
 
-                        //data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
-                        data.Add(reader["products"] == DBNull.Value ? "-" : String.Join(",", reader["products"].ToString()));
+                            //data.Add(reader["html_content"] == DBNull.Value ? "-" : reader["html_content"].ToString());
+                            data.Add(reader["products"] == DBNull.Value ? "-" : String.Join(",", reader["products"].ToString()));
 
-                        data.Add(" . ");
+                            data.Add(" . ");
 
-                        data.Add(reader["users"] == DBNull.Value ? "-" : String.Join(",", reader["users"].ToString()));
+                            data.Add(reader["users"] == DBNull.Value ? "-" : String.Join(",", reader["users"].ToString()));
 
-                        data.Add(" . ");
+                            data.Add(" . ");
 
-                        data.Add(reader["tags"] == DBNull.Value ? "-" : String.Join(",", reader["tags"].ToString()));
+                            data.Add(reader["tags"] == DBNull.Value ? "-" : String.Join(",", reader["tags"].ToString()));
+                        }
+
+                        string message = string.Join("", data);
+                        Console.WriteLine(message);
+                        lobby.SendMessagePlayer($"/ans true {message}", ws, requestId);
                     }
-
-                    string message = string.Join("", data);
-                    Console.WriteLine(message);
-                    lobby.SendMessagePlayer($"/ans true {message}", ws, requestId);
                 }
-
-            }
-            catch (Exception e)
-            {
-                SendLoginResponse(senderId, -1, "error", "Recepts Not Found");
-                Console.WriteLine($"Error executing Login command: {e}");
+                catch (Exception e)
+                {
+                    SendLoginResponse(senderId, -1, "error", "Recepts Not Found");
+                    Console.WriteLine($"Error executing Login command: {e}");
+                }
             }
         }
 
         private async Task ExecuteLogin(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
-            try
+            using (var cursor = dbConnection.CreateCommand())
             {
-                // Убираем "Login" из начала SQL-команды
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
-                string username = credentials[1], password = credentials[2];
-
-                // Проверка, что пользователь с таким именем существует
-                cursor.CommandText = $"SELECT * FROM users WHERE username='{username}'";
-                using (NpgsqlDataReader reader = cursor.ExecuteReader())
+                try
                 {
-                    if (reader.Read())
+                    // Убираем "Login" из начала SQL-команды
+                    List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                    credentials.RemoveAt(0);
+                    int requestId = int.Parse(credentials[0]);
+                    string username = credentials[1], password = credentials[2];
+
+                    // Проверка, что пользователь с таким именем существует
+                    cursor.CommandText = $"SELECT * FROM users WHERE username='{username}'";
+                    using (NpgsqlDataReader reader = cursor.ExecuteReader())
                     {
-                        string storedPassword = reader.GetString(2);
-                        string storedSalt = reader.GetString(3);
-                        
-                        string saltedPassword = password + storedSalt;
-
-                        using (SHA256 sha256 = SHA256.Create())
+                        if (reader.Read())
                         {
-                            // Кодируем соленый пароль в байтовую строку перед передачей его объекту хэша
-                            byte[] saltedPasswordBytes = Encoding.UTF8.GetBytes(saltedPassword);
+                            string storedPassword = reader.GetString(2);
+                            string storedSalt = reader.GetString(3);
 
-                            // Обновляем объект хэша с байтами соленого пароля
-                            byte[] hashedPasswordBytes = sha256.ComputeHash(saltedPasswordBytes);
+                            string saltedPassword = password + storedSalt;
 
-                            // Получаем шестнадцатеричное представление хэша
-                            string hashedPassword = BitConverter.ToString(hashedPasswordBytes).Replace("-", "");
-
-                            if (hashedPassword == storedPassword)
+                            using (SHA256 sha256 = SHA256.Create())
                             {
-                                int userId = reader.GetInt32(0);
-                                // Сохраняем id в экземпляре SqlCommander
-                                lobby.Players[ws].Id = userId;
-                                // Вызываем add_player и передаем id
-                                lobby.SendMessageExcept($"Welcome, Player {lobby.Players[ws].Id}", ws);
-                                lobby.SendMessagePlayer($"/ans true", ws, requestId);
-                                SendLoginResponse(senderId, userId, "success");
-                            }
-                            else
-                            {
-                                SendLoginResponse(senderId, -1, "error", "Invalid password");
-                                lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                                // Кодируем соленый пароль в байтовую строку перед передачей его объекту хэша
+                                byte[] saltedPasswordBytes = Encoding.UTF8.GetBytes(saltedPassword);
+
+                                // Обновляем объект хэша с байтами соленого пароля
+                                byte[] hashedPasswordBytes = sha256.ComputeHash(saltedPasswordBytes);
+
+                                // Получаем шестнадцатеричное представление хэша
+                                string hashedPassword = BitConverter.ToString(hashedPasswordBytes).Replace("-", "");
+
+                                if (hashedPassword == storedPassword)
+                                {
+                                    int userId = reader.GetInt32(0);
+                                    // Сохраняем id в экземпляре SqlCommander
+                                    lobby.Players[ws].Id = userId;
+                                    // Вызываем add_player и передаем id
+                                    lobby.SendMessageExcept($"Welcome, Player {lobby.Players[ws].Id}", ws);
+                                    lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                                    SendLoginResponse(senderId, userId, "success");
+                                }
+                                else
+                                {
+                                    SendLoginResponse(senderId, -1, "error", "Invalid password");
+                                    lobby.SendMessagePlayer($"/ans false", ws, requestId);
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        reader.Close();
-                        // Пользователь с таким именем не существует
-                        SendLoginResponse(senderId, -1, "error", "User not found");
+                        else
+                        {
+                            reader.Close();
+                            // Пользователь с таким именем не существует
+                            SendLoginResponse(senderId, -1, "error", "User not found");
+                        }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                SendLoginResponse(senderId, -1, "error", "User not found");
-                Console.WriteLine($"Error executing Login command: {e}");
+                catch (Exception e)
+                {
+                    SendLoginResponse(senderId, -1, "error", "User not found");
+                    Console.WriteLine($"Error executing Login command: {e}");
+                }
             }
         }
 
         private async Task ExecuteRegistration(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Player player)
         {
-            try
+            using (var cursor = dbConnection.CreateCommand())
             {
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
-                string username = credentials[1], password = credentials[2];
-
-                // Начало транзакции
-                using (var transaction = dbConnection.BeginTransaction())
+                try
                 {
-                    try
+                    List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                    credentials.RemoveAt(0);
+                    int requestId = int.Parse(credentials[0]);
+                    string username = credentials[1], password = credentials[2];
+
+                    // Начало транзакции
+                    using (var transaction = dbConnection.BeginTransaction())
                     {
-                        // Проверка, что пользователь с таким именем не существует
-                        cursor.CommandText = $"SELECT * FROM users WHERE username='{username}'";
-                        using (NpgsqlDataReader reader = cursor.ExecuteReader())
+                        try
                         {
-                            if (!reader.Read())
+                            // Проверка, что пользователь с таким именем не существует
+                            cursor.CommandText = $"SELECT * FROM users WHERE username='{username}'";
+                            using (NpgsqlDataReader reader = cursor.ExecuteReader())
                             {
-                                reader.Close();
-                                // Генерируем случайную соль
-                                string salt = Guid.NewGuid().ToString("N").Substring(0, 16);
-
-                                // Добавляем соль к паролю
-                                string saltedPassword = password + salt;
-
-                                // Создаем объект хэша с использованием алгоритма SHA-256
-                                using (SHA256 sha256 = SHA256.Create())
+                                if (!reader.Read())
                                 {
-                                    // Кодируем соленый пароль в байтовую строку перед передачей его объекту хэша
-                                    byte[] saltedPasswordBytes = Encoding.UTF8.GetBytes(saltedPassword);
+                                    reader.Close();
+                                    // Генерируем случайную соль
+                                    string salt = Guid.NewGuid().ToString("N").Substring(0, 16);
 
-                                    // Обновляем объект хэша с байтами соленого пароля
-                                    byte[] hashedPasswordBytes = sha256.ComputeHash(saltedPasswordBytes);
+                                    // Добавляем соль к паролю
+                                    string saltedPassword = password + salt;
 
-                                    // Получаем шестнадцатеричное представление хэша
-                                    string hashedPassword = BitConverter.ToString(hashedPasswordBytes).Replace("-", "");
+                                    // Создаем объект хэша с использованием алгоритма SHA-256
+                                    using (SHA256 sha256 = SHA256.Create())
+                                    {
+                                        // Кодируем соленый пароль в байтовую строку перед передачей его объекту хэша
+                                        byte[] saltedPasswordBytes = Encoding.UTF8.GetBytes(saltedPassword);
 
-                                    // Регистрация пользователя
-                                    Console.WriteLine($"('{username}', '{hashedPassword}', '{salt}')");
-                                    cursor.CommandText = $"INSERT INTO users (username, password, salt) VALUES ('{username}', '{hashedPassword}', '{salt}')";
-                                    cursor.ExecuteNonQuery();
+                                        // Обновляем объект хэша с байтами соленого пароля
+                                        byte[] hashedPasswordBytes = sha256.ComputeHash(saltedPasswordBytes);
 
-                                    // Подтверждение изменений
-                                    transaction.Commit();
+                                        // Получаем шестнадцатеричное представление хэша
+                                        string hashedPassword = BitConverter.ToString(hashedPasswordBytes).Replace("-", "");
 
-                                    SendRegistrationResponse(senderId, "success");
+                                        // Регистрация пользователя
+                                        Console.WriteLine($"('{username}', '{hashedPassword}', '{salt}')");
+                                        cursor.CommandText = $"INSERT INTO users (username, password, salt) VALUES ('{username}', '{hashedPassword}', '{salt}')";
+                                        cursor.ExecuteNonQuery();
+
+                                        // Подтверждение изменений
+                                        transaction.Commit();
+
+                                        SendRegistrationResponse(senderId, "success");
+                                    }
+                                }
+                                else
+                                {
+                                    // Пользователь с таким именем уже существует
+                                    SendRegistrationResponse(senderId, "error", "Username already exists");
                                 }
                             }
-                            else
-                            {
-                                // Пользователь с таким именем уже существует
-                                SendRegistrationResponse(senderId, "error", "Username already exists");
-                            }
+                        }
+                        catch (Exception e)
+                        {
+                            // В случае ошибки откатываем транзакцию
+                            transaction.Rollback();
+                            Console.WriteLine($"Error executing Registration command: {e}");
                         }
                     }
-                    catch (Exception e)
-                    {
-                        // В случае ошибки откатываем транзакцию
-                        transaction.Rollback();
-                        Console.WriteLine($"Error executing Registration command: {e}");
-                    }
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error executing Registration command: {e}");
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error executing Registration command: {e}");
+                }
             }
         }
 
