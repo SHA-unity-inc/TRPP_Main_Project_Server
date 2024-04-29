@@ -289,7 +289,7 @@ namespace shooter_server
 
 
 
-        private async Task Favorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task Favorite(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var cursor = dbConnection.CreateCommand())
             {
@@ -334,7 +334,7 @@ namespace shooter_server
             }
         }
 
-        private async Task IsFavorite(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task IsFavorite(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var cursor = dbConnection.CreateCommand())
             {
@@ -372,7 +372,7 @@ namespace shooter_server
         }
 
 
-        private async Task GetRecept(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task GetRecept(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var cursor = dbConnection.CreateCommand())
             {
@@ -406,7 +406,7 @@ namespace shooter_server
             }
         }
 
-        private async Task GetRecepts(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task GetRecepts(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var cursor = dbConnection.CreateCommand())
             {
@@ -460,7 +460,7 @@ namespace shooter_server
             }
         }
 
-        private async Task ExecuteLogin(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task ExecuteLogin(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var cursor = dbConnection.CreateCommand())
             {
@@ -527,7 +527,7 @@ namespace shooter_server
             }
         }
 
-        private async Task ExecuteRegistration(string sqlCommand, NpgsqlCommand cursor, int senderId, NpgsqlConnection dbConnection, Player player)
+        private async Task ExecuteRegistration(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Player player)
         {
             using (var cursor = dbConnection.CreateCommand())
             {
