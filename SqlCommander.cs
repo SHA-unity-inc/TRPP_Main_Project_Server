@@ -79,6 +79,9 @@ namespace shooter_server
                         case string s when s.StartsWith("IsFavorite"):
                             await Task.Run(() => IsFavorite(sqlCommand, senderId, dbConnection, lobby, webSocket));
                             break;
+                        case string s when s.StartsWith("GetRecomendsRecepts"):
+                            await Task.Run(() => GetRecomendsRecepts(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
                         default:
                             Console.WriteLine("Command not found");
                             break;
@@ -91,7 +94,7 @@ namespace shooter_server
             }
         }
 
-        private async Task GetRecomends(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        private async Task GetRecomendsRecepts(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             using (var cursor = dbConnection.CreateCommand())
             {
