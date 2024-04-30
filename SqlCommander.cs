@@ -91,6 +91,66 @@ namespace shooter_server
             }
         }
 
+        private async Task GetRecomends(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            using (var cursor = dbConnection.CreateCommand())
+            {
+                try
+                {
+                    List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                    credentials.RemoveAt(0);
+                    int requestId = int.Parse(credentials[0]);
+
+                    // Здесь вы должны использовать ваш запрос SQL
+                    cursor.CommandText = $@"
+                        SELECT 
+                            r.id, 
+                            r.title, 
+                            r.content, 
+                            COALESCE(SUM(CASE WHEN l.action = 'liked' THEN 1 
+                                             WHEN l.action = 'disliked' THEN -1 
+                                             WHEN l.action = 'favorites' THEN 5 
+                                             ELSE 0 END), 0) AS total_score 
+                        FROM 
+                            recepts r 
+                        LEFT JOIN 
+                            recept_tags rt ON r.id = rt.recept_id 
+                        LEFT JOIN 
+                            liked l ON r.id = l.recept_id AND l.user_id = @userId 
+                        GROUP BY 
+                            r.id, r.title, r.content 
+                        ORDER BY 
+                            total_score DESC;";
+
+                    cursor.Parameters.AddWithValue("userId", senderId);
+
+                    using (var reader = await cursor.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            // Здесь вы можете обработать результаты запроса
+                            int receptId = reader.GetInt32(0);
+                            string title = reader.GetString(1);
+                            string content = reader.GetString(2);
+                            int totalScore = reader.GetInt32(3);
+
+                            // Ваши действия с полученными данными
+                            // Например, отправка сообщений в лобби или куда-либо ещё
+                            Console.WriteLine(receptId.ToString() + " / " + totalScore.ToString());
+                        }
+                    }
+
+                    //lobby.SendMessagePlayer($"/ans true", ws, requestId);
+                    Console.WriteLine("true");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error executing GetRecomends command: {e}");
+                }
+            }
+        }
+
+
         private async Task GetId(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
             List<string> credentials = new List<string>(sqlCommand.Split(' '));
