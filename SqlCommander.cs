@@ -161,12 +161,12 @@ namespace shooter_server
 
         private async Task SendRecipe(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
+            List<string> credentials = new List<string>(sqlCommand.Split(' '));
+            credentials.RemoveAt(0);
+            int requestId = int.Parse(credentials[0]);
             try
             {
                 // Parse the sqlCommand to get the requestId, title, and html_content
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
                 string title = credentials[1];
                 string htmlContent = credentials[2];
 
@@ -207,12 +207,12 @@ namespace shooter_server
 
         private async Task GetTags(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
+            List<string> credentials = new List<string>(sqlCommand.Split(' '));
+            credentials.RemoveAt(0);
+            int requestId = int.Parse(credentials[0]);
             try
             {
                 // Parse the sqlCommand to get the requestId
-                List<string> credentials = new List<string>(sqlCommand.Split(' '));
-                credentials.RemoveAt(0);
-                int requestId = int.Parse(credentials[0]);
 
                 // Initialize a list to hold the tag names
                 List<string> tagNames = new List<string>();
