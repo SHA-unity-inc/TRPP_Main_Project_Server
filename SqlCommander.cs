@@ -183,7 +183,7 @@ namespace shooter_server
                     command.Parameters.AddWithValue("@htmlContent", htmlContent);
 
                     // Execute the query and get the inserted recipe's ID
-                    await command.ExecuteNonQuery();
+                    command.ExecuteNonQuery();
 
                     // Construct the message with the new recipe ID
                     string message = $"/ans true";
