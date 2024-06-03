@@ -240,7 +240,7 @@ namespace shooter_server
                 }
 
                 // Construct the message with all tag names
-                string message = "/ans " + string.Join(" ", tagNames);
+                string message = "/ans true " + string.Join(" ", tagNames);
 
                 // Send the accumulated tag names to the player
                 lobby.SendMessagePlayer(message, ws, requestId);
