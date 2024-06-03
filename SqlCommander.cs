@@ -82,6 +82,9 @@ namespace shooter_server
                         case string s when s.StartsWith("GetRecomendsRecepts"):
                             await Task.Run(() => GetRecomendsRecepts(sqlCommand, senderId, dbConnection, lobby, webSocket));
                             break;
+                        case string s when s.StartsWith("GetTags"):
+                            await Task.Run(() => GetTags(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
                         default:
                             Console.WriteLine("Command not found");
                             break;
@@ -152,6 +155,60 @@ namespace shooter_server
                 }
             }
         }
+
+        private async Task GetTags(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            try
+            {
+                // Parse the sqlCommand to get the requestId
+                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                credentials.RemoveAt(0);
+                int requestId = int.Parse(credentials[0]);
+
+                // Initialize a list to hold the tag names
+                List<string> tagNames = new List<string>();
+
+                using (var cursor = dbConnection.CreateCommand())
+                {
+                    // SQL query to get the tag names
+                    cursor.CommandText = @"
+                SELECT 
+                    tag 
+                FROM 
+                    tags;";
+
+                    // Execute the query and process the results
+                    using (var reader = await cursor.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            // Get the tag name
+                            string tagName = reader.GetString(0);
+
+                            // Add the tag name to the list
+                            tagNames.Add(tagName);
+                        }
+                    }
+                }
+
+                // Construct the message with all tag names
+                string message = "/ans " + string.Join(" ", tagNames);
+
+                // Send the accumulated tag names to the player
+                lobby.SendMessagePlayer(message, ws, requestId);
+                Console.WriteLine("true");
+            }
+            catch (Exception e)
+            {
+                // Log the error
+                Console.WriteLine($"Error executing GetTags command: {e}");
+
+                // Notify of the failure
+                lobby.SendMessagePlayer($"/ans false", ws, requestId);
+            }
+        }
+
+
 
 
         private async Task GetId(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
