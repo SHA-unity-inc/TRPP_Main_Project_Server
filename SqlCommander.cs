@@ -175,16 +175,15 @@ namespace shooter_server
                 {
                     // SQL query to insert the recipe
                     command.CommandText = @"
-                INSERT INTO recipes (title, html_content)
-                VALUES (@title, @htmlContent)
-                RETURNING recipe_id;";
+                INSERT INTO recepts (title, html_content)
+                VALUES (@title, @htmlContent);";
 
                     // Add parameters
                     command.Parameters.AddWithValue("@title", title);
                     command.Parameters.AddWithValue("@htmlContent", htmlContent);
 
                     // Execute the query and get the inserted recipe's ID
-                    int newRecipeId = (int)await command.ExecuteScalarAsync();
+                    await command.ExecuteNonQuery();
 
                     // Construct the message with the new recipe ID
                     string message = $"/ans true";
