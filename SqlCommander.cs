@@ -85,6 +85,9 @@ namespace shooter_server
                         case string s when s.StartsWith("GetTags"):
                             await Task.Run(() => GetTags(sqlCommand, senderId, dbConnection, lobby, webSocket));
                             break;
+                        case string s when s.StartsWith("SendRecipe"):
+                            await Task.Run(() => SendRecipe(sqlCommand, senderId, dbConnection, lobby, webSocket));
+                            break;
                         default:
                             Console.WriteLine("Command not found");
                             break;
@@ -155,6 +158,52 @@ namespace shooter_server
                 }
             }
         }
+
+        private async Task SendRecipe(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
+        {
+            try
+            {
+                // Parse the sqlCommand to get the requestId, title, and html_content
+                List<string> credentials = new List<string>(sqlCommand.Split(' '));
+                credentials.RemoveAt(0);
+                int requestId = int.Parse(credentials[0]);
+                string title = credentials[1];
+                string htmlContent = credentials[2];
+
+                // Insert the new recipe into the database
+                using (var command = dbConnection.CreateCommand())
+                {
+                    // SQL query to insert the recipe
+                    command.CommandText = @"
+                INSERT INTO recipes (title, html_content)
+                VALUES (@title, @htmlContent)
+                RETURNING recipe_id;";
+
+                    // Add parameters
+                    command.Parameters.AddWithValue("@title", title);
+                    command.Parameters.AddWithValue("@htmlContent", htmlContent);
+
+                    // Execute the query and get the inserted recipe's ID
+                    int newRecipeId = (int)await command.ExecuteScalarAsync();
+
+                    // Construct the message with the new recipe ID
+                    string message = $"/ans true";
+
+                    // Send the message to the player
+                    lobby.SendMessagePlayer(message, ws, requestId);
+                    Console.WriteLine("true");
+                }
+            }
+            catch (Exception e)
+            {
+                // Log the error
+                Console.WriteLine($"Error creating recipe: {e}");
+
+                // Notify of the failure
+                lobby.SendMessagePlayer($"/ans false", ws, requestId);
+            }
+        }
+
 
         private async Task GetTags(string sqlCommand, int senderId, NpgsqlConnection dbConnection, Lobby lobby, WebSocket ws)
         {
